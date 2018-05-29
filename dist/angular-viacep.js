@@ -1,1 +1,146 @@
-!function(e,r,n){"use strict";angular.module("angular.viacep",[]),angular.module("angular.viacep").directive("viaCep",["viaCepHelper",function(e){return{restrict:"A",require:["ngModel","^viaCepForm"],scope:{viacepKey:"@viaCep"},link:function(r,n,t,i){var a,u,o;return o=i[0],u=i[1],a=function(r){if(e.isValidCep(r))return u.get(r).then(function(){return o.$setValidity("cep",!0)},function(){return o.$setValidity("cep",!1)})},"cep"===r.viacepKey?r.$watch(function(){return o.$modelValue},function(e){return a(e)}):u.registerMapper(r.viacepKey,o)}}}]),angular.module("angular.viacep").directive("viaCepForm",[function(){return{restrict:"A",controller:["$scope","viaCepHelper","VALID_KEYS",function(e,r,n){var t,i,a;return this.mappers=[],t=function(e){return r.get(e,this.mappers)},i=function(e){var r;return r=n.indexOf(e),r!==-1},a=function(e,r){var t;if(t=i(e),!t)throw new TypeError("viacep key must be one of: "+n);return this.mappers[e]=r},this.registerMapper=a,this.get=t,this}],link:function(e,r,n){}}}]),angular.module("angular.viacep").value("VALID_KEYS",["cep","logradouro","complemento","bairro","localidade","uf","unidade","ibge","gia"]),angular.module("angular.viacep").factory("viaCepHelper",["viaCep","$q","VALID_KEYS",function(e,r,n){var t,i,a,u,o;return o={},t=function(e,r){var t,i,a,u,o;for(o=[],t=0,a=n.length;t<a;t++)i=n[t],void 0!==r[i]?(u=r[i],u.$modelValue?o.push(void 0):(u.$setViewValue(e[i]),o.push(u.$render()))):o.push(void 0);return o},i=function(n,i){var a;return a=r.defer(),e.get(n).then(function(e){return a.resolve(),t(e,i)},function(e){return a.reject()}),a.promise},u=function(e){var r;return r=n.indexOf(e),r!==-1},a=function(e){var r;return""!==e&&(null!==e&&void 0!==e&&(r=e.replace(/\D/g,""),8===r.length))},o.fillAddress=t,o.get=i,o.isValidCep=a,o.isValidKey=u,o}]),angular.module("angular.viacep").factory("viaCep",["$http","$q",function(e,r){var n;return n=function(n){var t,i,a;if(void 0===n)throw new TypeError("CEP can't be undefined");if(""===n)throw new TypeError("CEP can't be empty");if(null===n)throw new TypeError("CEP can't be null");return i=n.replace(/\D/g,""),a="https://viacep.com.br/ws/"+i+"/json/",t=r.defer(),e.get(a).then(function(e){var r;return r=e.data,r.erro?t.reject("CEP not found"):t.resolve(r)}),t.promise},{get:n}}])}(window,document);
+angular.module('angular.viacep', []);
+
+angular.module('angular.viacep').factory('viaCEP', [
+  '$http', '$q', function($http, $q) {
+    var _get;
+    _get = function(cepValue) {
+      var deferred, formatedCep, viaCepUrl;
+      if (cepValue === void 0) {
+        throw new TypeError("CEP can't be undefined");
+      }
+      if (cepValue === '') {
+        throw new TypeError("CEP can't be empty");
+      }
+      if (cepValue === null) {
+        throw new TypeError("CEP can't be null");
+      }
+      formatedCep = cepValue.replace(/\D/g, '');
+      viaCepUrl = "https://viacep.com.br/ws/" + formatedCep + "/json/";
+      deferred = $q.defer();
+      $http.get(viaCepUrl).then(function(response) {
+        var raw;
+        raw = response.data;
+        if (raw.erro) {
+          return deferred.reject('CEP not found');
+        } else {
+          return deferred.resolve(raw);
+        }
+      });
+      return deferred.promise;
+    };
+    return {
+      get: _get
+    };
+  }
+]);
+
+angular.module('angular.viacep').directive('viaCep', [
+  'viaCEPHelper', function(viaCEPHelper) {
+    return {
+      restrict: 'A',
+      require: 'ngModel',
+      scope: {
+        viacepKey: '@viaCep'
+      },
+      link: function(scope, element, attrs, ngModelController) {
+        var _get;
+        _get = function(cepValue) {
+          if (viaCEPHelper.isValidCep(cepValue)) {
+            return viaCEPHelper.get(cepValue).then(function() {
+              return ngModelController.$setValidity('cep', true);
+            }, function() {
+              return ngModelController.$setValidity('cep', false);
+            });
+          }
+        };
+        if (scope.viacepKey === 'cep') {
+          return scope.$watch(function() {
+            return ngModelController.$modelValue;
+          }, function(cepValue) {
+            return _get(cepValue);
+          });
+        } else {
+          return viaCEPHelper.registerMapper(scope.viacepKey, ngModelController);
+        }
+      }
+    };
+  }
+]);
+
+angular.module('angular.viacep').factory('viaCEPHelper', [
+  'viaCEP', '$q', function(viaCEP, $q) {
+    var _cleanAddress, _fillAddress, _get, _isValidCep, _isValidKey, _mappers, _registerMapper, _validKeys, service;
+    service = {};
+    _mappers = {};
+    _validKeys = ['cep', 'logradouro', 'complemento', 'bairro', 'localidade', 'uf', 'unidade', 'ibge', 'gia'];
+    _registerMapper = function(viacepKey, modelController) {
+      if (!_isValidKey(viacepKey)) {
+        throw new TypeError("viacep key must be one of: " + _validKeys);
+      }
+      return _mappers[viacepKey] = modelController;
+    };
+    _fillAddress = function(address) {
+      var i, key, len, results;
+      results = [];
+      for (i = 0, len = _validKeys.length; i < len; i++) {
+        key = _validKeys[i];
+        if (_mappers[key] !== void 0) {
+          _mappers[key].$setViewValue(address[key]);
+          results.push(_mappers[key].$render());
+        } else {
+          results.push(void 0);
+        }
+      }
+      return results;
+    };
+    _cleanAddress = function(address) {
+      var i, key, len, results;
+      results = [];
+      for (i = 0, len = _validKeys.length; i < len; i++) {
+        key = _validKeys[i];
+        if (_mappers[key] !== void 0) {
+          _mappers[key].$setViewValue('');
+          results.push(_mappers[key].$render());
+        } else {
+          results.push(void 0);
+        }
+      }
+      return results;
+    };
+    _get = function(cepValue) {
+      var deferred;
+      deferred = $q.defer();
+      viaCEP.get(cepValue).then(function(response) {
+        deferred.resolve();
+        return _fillAddress(response);
+      }, function(response) {
+        deferred.reject();
+      });
+      return deferred.promise;
+    };
+    _isValidKey = function(viacepKey) {
+      var index;
+      index = _validKeys.indexOf(viacepKey);
+      if (index === -1) {
+        return false;
+      }
+      return true;
+    };
+    _isValidCep = function(cepValue) {
+      var formatedCep;
+      if (cepValue === '' || cepValue === null || cepValue === void 0) {
+        return false;
+      }
+      formatedCep = cepValue.replace(/\D/g, '');
+      if (formatedCep.length !== 8) {
+        return false;
+      }
+      return true;
+    };
+    service.registerMapper = _registerMapper;
+    service.fillAddress = _fillAddress;
+    service.get = _get;
+    service.isValidCep = _isValidCep;
+    return service;
+  }
+]);

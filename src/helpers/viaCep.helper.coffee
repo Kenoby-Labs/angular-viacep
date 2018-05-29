@@ -30,7 +30,6 @@ angular
           _fillAddress(response, mappers)
         , (response) ->
           deferred.reject()
-          _cleanAddress()
         deferred.promise
 
       _isValidKey = (viacepKey) ->
