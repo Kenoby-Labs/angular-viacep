@@ -19,9 +19,6 @@ angular
               return false
             true
 
-          _cleanAddress = ->
-            viaCepHelper.cleanAddress(@.mappers)
-
           _registerMapper = (viacepKey, modelController) ->
             validKey = _isValidKey(viacepKey)
             throw new TypeError "viacep key must be one of: #{VALID_KEYS}" if not validKey
@@ -29,7 +26,6 @@ angular
 
           @.registerMapper = _registerMapper
           @.get            = _get
-          @.cleanAddress   = _cleanAddress
 
           return @
       ]
